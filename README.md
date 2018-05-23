@@ -2,7 +2,7 @@
 
 ## CI/CD pipeline
 
-github (source code + dockerfile) --hook-> travis (build java + docker image) --push docker image--> docker hub --> spinnaker --> k8s (AWS)
+GitHub (source code + dockerfile) --push-hook-> Travis (build java + docker image) --push docker image--> docker hub --polling-> spinnaker --deploy-> k8s (AWS)
 
 ## Pre-reqs
 
@@ -18,8 +18,8 @@ Travis will push the image (cbonami/k8s-spring-boot-demo) into the docker hub (p
 
 ### Get a Travis account
 
-Get Travis account, by signing in via your GitHub account.
-Your Travis- and GitHub-accounts will be automatically linked.
+Get a Travis account, by signing in via your GitHub account.
+Your Travis- and GitHub-accounts will be automatically linked, ie whenever code is pushed to github, it will be built automatically by Travis.
 Enable the GitHub-repo of your choosing in Travis.
 
 ### Update .travis.yml
