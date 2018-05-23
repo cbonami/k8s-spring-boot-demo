@@ -50,9 +50,11 @@ We make use of a ubuntu/xenial64 box that we set up via vagrant.
 
 Install vagrant on your local host.
 
+```bash
 vagrant init ubuntu/xenials64
 vagrant up
 vagrant ssh
+```
 
 ### Generate a private SSH key
 
@@ -60,7 +62,9 @@ In the Ubuntu VM.
 
 <todo>
 
+```bash
 ssh-keygen
+```
 
 ### Install kubernetes cluster with Kops
 
@@ -131,22 +135,34 @@ Point your browser to that url.
 #### install kubectl
 
 #### install helm
+
+```bash
 curl https://raw.githubusercontent.com/kubernetes/helm/master/scripts/get > get_helm.sh
 chmod 700 get_helm.sh
 ./get_helm.sh
+```
 
 #### Config RBAC
+
+```bash
 kubectl create serviceaccount tiller --namespace kube-system
 kubectl create clusterrolebinding tiller --clusterrole cluster-admin --serviceaccount=kube-system:tiller
+```
 in case service account 'tiller' is not used: then default service account is used: this means:
+
+```bash
 kubectl create clusterrolebinding admin-clusterrolebinding --clusterrole=cluster-admin --serviceaccount=kube-system:default
+```
 
 -> see http://docs.heptio.com/content/tutorials/rbac.html
 create roles: https://github.com/kubernetes/helm/issues/2962 (needed ??)
 
 #### install helm/tiller on k8s cluster
+
+```bash
 helm init --service-account tiller
-(just 'helm init' if sa tiller is not used)
+```
+(or just 'helm init' if sa tiller is not used)
 general info: https://dzone.com/articles/securing-helm
 
 sidenote: remove tiller
@@ -157,40 +173,87 @@ tiller in its own namespace? https://medium.com/@amimahloof/how-to-setup-helm-an
 #### install spinnaker with helm
 https://thenewstack.io/getting-started-spinnaker-kubernetes/
 helm chart can be found here: https://github.com/kubernetes/charts/tree/master/stable/spinnaker
+```bash
 curl -Lo values.yaml https://raw.githubusercontent.com/kubernetes/charts/master/stable/spinnaker/values.yaml
-Make changes to spinnaker.yml: add docker hub repo's
+```
+Make changes to spinnaker.yml: add docker hub repo's.
+Then do ythe actual installation of spinnaker:
+
+```bash
 helm install -n kubelive stable/spinnaker -f values.yaml --timeout 300 --namespace spinnaker
-check if all ok: kubectl get pods --namespace spinnaker
-do port-forwarding workaround: copy ~/.kube/config from your VM to host system (where kubectl is also installed)
-check if works: on host: kubectl get node
-on host: forward the port 9000:
+```
+check if all ok: 
+```bash
+kubectl get pods --namespace spinnaker
+```
+
+You want to be able to go to spinnaker dashboard from your _local_ host's browser.
+The 'kubectl port-forward' when executed from the Ubunbtu VM will only bind to the local (=VM's) IP and _not_ to your host's IP.
+Do port-forwarding workaround: copy ~/.kube/config from your VM to your host system (where kubectl is also installed)
+Check if works: on host: 
+```bash
+kubectl get node
+```
+This should list all pods in the k8s cluster on AWS.
+
+Then on host: forward the port 9000:
+```bash
 export DECK_POD=$(kubectl get pods --namespace spinnaker -l "component=deck,app=kubelive-spinnaker" -o jsonpath="{.items[0].metadata.name}")
 kubectl port-forward --namespace spinnaker $DECK_POD 9000
-open browser: http://localhost:9000
+```
+Point browser to: http://localhost:9000
+This should show the spinnaker dashboard.
 
-bug/problem: https://github.com/kubernetes/charts/issues/5483
--> list of applications, namespaces is empty :(
+Work around bug/problem: https://github.com/kubernetes/charts/issues/5483
+-> list of applications, namespaces in spinnaker is empty :(
+If you check the k8s logs:
+
+```bash
 kubectl logs -n spinnaker kubelive-spinnaker-clouddriver-d4959567-kctkg -f
+```
 -> com.netflix.spinnaker.clouddriver.kubernetes.v1.deploy.exception.KubernetesOperationException: Get Namespaces for account local failed: Forbidden! Configured service account doesn't have access. Service account may have been revoked. namespaces is forbidden: User "system:serviceaccount:spinnaker:default" cannot list namespaces at the cluster scope
-insecure workaround: kubectl create clusterrolebinding spinnaker-default-crbinding --clusterrole cluster-admin --serviceaccount=spinnaker:default
+
+Insecure workaround: 
+
+```bash
+kubectl create clusterrolebinding spinnaker-default-crbinding --clusterrole cluster-admin --serviceaccount=spinnaker:default
+```
 
 ##### upgrade spinnaker (values.yaml)
+
+Edit values.yml, then
+
+```bash
 helm upgrade -f values.yaml kubelive stable/spinnaker
+```
 
 ##### remove spinnaker
+
+```bash
 helm del –purge kubelive
+```
 
 #### Create namespaces for apps
+
 https://kubernetes.io/docs/tasks/administer-cluster/namespaces-walkthrough/
+
+```bash
 kubectl create -f https://k8s.io/docs/tasks/administer-cluster/namespace-dev.json
 kubectl create -f https://k8s.io/docs/tasks/administer-cluster/namespace-prod.json
+```
+
 Best-practice: set contexts
 
 ### Create CD Pipeline
+
 * Create new application
 * Create new loadbalancer
 * Create new server group
 test nodejs app: 
+```bash
 kubectl proxy
+```
+Point your browser to:
 http://127.0.0.1:8001/api/v1/proxy/namespaces/default/services/nodejs-dev-nodejs-webapp:80/
+
 * Create new pipeline
