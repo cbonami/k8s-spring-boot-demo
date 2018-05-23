@@ -1,5 +1,9 @@
-FROM openjdk:8-jre
+FROM frolvlad/alpine-oraclejdk8:slim
+VOLUME /tmp
 ADD target/k8s-spring-boot-demo-0.0.1-SNAPSHOT app.jar
-EXPOSE 8080
-EXPOSE 8081
-ENTRYPOINT ["java","-Djava.security.egd=file:/dev/./urandom","-jar","/app.jar"]
+RUN sh -c 'touch /app.jar'
+#ENV JAVA_OPTS="-Xdebug -Xrunjdwp:server=y,transport=dt_socket,address=8787,suspend=n"
+EXPOSE 8080 8081
+#EXPOSE 8080 8081 8087
+ENTRYPOINT [ "sh", "-c", "java $JAVA_OPTS -Djava.security.egd=file:/dev/./urandom -Dspring.profiles.active=docker -jar /app.jar" ]
+

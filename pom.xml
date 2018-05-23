@@ -96,6 +96,10 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <!-- fix issue: https://github.com/spring-projects/spring-boot/issues/6254 -->
+                    <classifier>exec</classifier>
+                </configuration>
             </plugin>
             <plugin>
                 <!--skip deploy -->
